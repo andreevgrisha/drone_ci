@@ -1,0 +1,63 @@
+kind: pipeline
+type: docker
+name: test_drone_ci
+
+clone:
+      disable: true
+
+steps:
+- name: myclone
+  image: docker:git
+  extra_hosts: 
+        - "grilab.io:10.3.0.20"
+  commands:
+      - ping -c 1 grilab.io
+      - git clone http://grilab.io/andreevgrisha/drone.git .
+
+- name: build
+  image: node:latest
+  commands: 
+      - npm install
+
+- name: test
+  image: node:latest
+  commands: 
+      - npm run test
+  failure: ignore
+      
+- name: nexus push 
+  image: docker
+  environment:
+     USER:
+       from_secret: nexus_username
+     PASS:
+       from_secret: nexus_password 
+  commands:
+        - docker login --username=${USER} --password=${PASS} grilab.io:8085 
+        - docker build -t grilab.io:8085/drontest:latest -f Dockerfile .
+        - docker push grilab.io:8085/drontest:latest
+  volumes:
+        - name: run
+          path: /var/run/docker.sock
+  extra_hosts: 
+        - "grilab.io:10.3.0.20"
+
+#======= pluginx/docker not route to local gitlab but will do
+#- name: nexus registry  
+#  image: plugins/docker
+#  settings:
+#    registry: grilab.io:8085
+#    repo: grilab.io:8085/repository/nexus
+#    tags: grilab.io:8085/testdrone:latest
+#    username: 
+#      from_secret: nexus_username
+#    password: 
+#      from_secret: nexus_password
+#    insecure: true
+#  extra_hosts: 
+#        - "grilab.io:10.3.0.20"
+
+volumes:
+- name: run
+  host:
+     path: /var/run/docker.sock
