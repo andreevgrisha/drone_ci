@@ -2,4 +2,4 @@
 
 # Drone Server & Runner up with ansible playbook file
 
-ansible-playbook -i inv.yml playbook.yml
+ansible-playbook -i inv.yml playbook.yml --vault-password-file vault.pass
