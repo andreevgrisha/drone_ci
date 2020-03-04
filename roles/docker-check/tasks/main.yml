@@ -1,0 +1,41 @@
+---
+- name: check if docker is installed
+    package_facts:
+        manager: "auto"
+
+- block:
+
+    - name: add docker key
+      rpm_key:
+        key: https://download.docker.com/linux/centos/gpg
+        state: present
+    - name: add docker repository
+      get_url:
+          url: https://download.docker.com/linux/centos/docker-ce.repo
+          dest: /etc/yum.repos.d/docker-ce.repo
+          owner: root
+          group: root
+          mode: 0644
+    - name: enable docker edge repo
+      ini_file:
+          dest: /etc/yum.repos.d/docker-ce.repo
+          section: docker-ce-edge
+          option: enabled
+          value: 0
+    - name: install docker
+      package:
+          name: docker-ce
+          state: present
+      notify: restart docker
+    - name: ensure docker is started and enabled
+      service:
+          name: docker
+          state: started
+          enabled: true
+    - name: ensure docker user are added to the docker group
+      user:
+          name: gri
+          groups: docker
+          append: true
+
+  when: "'docker' not in ansible_facts.packages"

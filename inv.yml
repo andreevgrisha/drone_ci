@@ -1,0 +1,7 @@
+---
+all:
+    hosts:
+        grilab.io:
+            ansible_host: 10.3.0.20
+
+...
