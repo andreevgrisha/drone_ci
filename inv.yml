@@ -2,6 +2,6 @@
 all:
     hosts:
         grilab.io:
-            ansible_host: 10.3.0.20
+            ansible_host: 192.168.0.33
 
 ...

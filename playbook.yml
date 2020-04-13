@@ -5,55 +5,60 @@
   connection: local
   become: yes
 
-  roles:
-      - role: docker-check
+# roles:
+#     - role: docker-check
 
   tasks:
+
+      - name: provide net for docker container
+        docker_network:
+            name: drone_ci_network
+
       - name: up drone-server docker container
-        docker:
+        docker_container:
           name: drone-server
           image: drone/drone:1
-        volumes: 
+          volumes: 
             - /var/lib/drone:/data
             - /var/run/docker.sock:/var/run/docker.sock
-        env_file:
-            - ./.env
-        environment:
-            - DRONE_GITLAB_SERVER=http://grilab.io
-            - DRONE_GITLAB_CLIENT_ID=${APP_ID}
-            - DRONE_GITLAB_CLIENT_SECRET=${SCRT}
-            - DRONE_RPC_SECRET=${SH_SCRT}
-            - DRONE_SERVER_HOST=grilab.io:8880
-            - DRONE_SERVER_PROTO=http
-            - DRONE_USER_CREATE=username:andreevgrisha,admin:true
-            - DRONE_LOGS_DEBUG=true
-            - DRONE_RUNNER_NETWORKS=drone_ci_default
-        ports:
+          env:
+            DRONE_GITLAB_SERVER: "http://grilab.io"
+            DRONE_GITLAB_CLIENT_ID: "a463b5e0fff8a16444cb05ac75cb98968304cf54ec106711c273a6887cbb1ce8" 
+            DRONE_GITLAB_CLIENT_SECRET: "a1429d27a70219404ebfaea43673865f27658bc7c0b06c4a0ad06a560355b0e1"
+            DRONE_RPC_SECRET: "26d2c284e647867422876e092abe0204"
+            DRONE_SERVER_HOST: "grilab.io:8880"
+            DRONE_SERVER_PROTO: "http"
+            DRONE_USER_CREATE: "username:gri,admin:true"
+            DRONE_LOGS_DEBUG: "true"
+            DRONE_RUNNER_NETWORKS: "drone_ci_network"
+          ports:
             - "8880:80"
-        restart: always
-        extra_hosts:
-            - "grilab.io:${GRILAB_IP}" 
+          restart_policy: always
+          etc_hosts:
+            grilab.io: 192.168.0.33 
+          networks:
+            - name: drone_ci_network
 
       - name: up drone-runner docker container
-        docker:
+        docker_container:
           name: drone-runner
           image: drone/drone-runner-docker:1
-        volumes: 
+          volumes: 
             - /var/lib/drone:/data
             - /var/run/docker.sock:/var/run/docker.sock
-        env_file:
-            - ./.env
-        environment:
-            - DRONE_RPC_SECRET=${SH_SCRT}
-            - DRONE_RPC_HOST=drone-server
-            - DRONE_RPC_PROTO=http
-            - DRONE_RUNNER_CAPACITY=2
-            - DRONE_RUNNER_NAME=${HOSTNAME}
-            - DRONE_UI_USERNAME=${DR_SCRT}
-            - DRONE_UI_PASSWORD=${DR_SCRT}
-            - DRONE_RUNNER_NETWORKS=drone_ci_default
-        ports:
+          env:
+            DRONE_RPC_SECRET: "26d2c284e647867422876e092abe0204" 
+            DRONE_RPC_HOST: "drone-server"
+            DRONE_RPC_PROTO: "http"
+            DRONE_RUNNER_CAPACITY: "2"
+            DRONE_RUNNER_NAME: "drone-runner"
+            DRONE_UI_USERNAME: "root"
+            DRONE_UI_PASSWORD: "root"
+            DRONE_RUNNER_NETWORKS: "drone_ci_network"
+          ports:
             - "3001:3000"
-        restart: always
-        extra_hosts:
-            - "grilab.io:${GRILAB_IP}"
+          restart_policy: always
+          etc_hosts:
+            grilab.io: 192.168.0.33
+          networks:
+            - name: drone_ci_network
